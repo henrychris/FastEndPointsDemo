@@ -19,7 +19,7 @@ public class Register : Endpoint<RegisterRequest, ApiResponse<RegisterResponse>>
 
     public override void Configure()
     {
-        Post("/register");
+        Post("/auth/register");
         AllowAnonymous();
         AllowFileUploads();
     }

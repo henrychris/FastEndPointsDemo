@@ -20,7 +20,7 @@ public class Login : Endpoint<LoginRequest, ApiResponse<LoginResponse>>
 
     public override void Configure()
     {
-        Post("/login");
+        Post("/auth/login");
         AllowAnonymous();
     }
 
