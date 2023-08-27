@@ -1,16 +1,18 @@
-﻿using FastEndpoints;
+﻿using System.Net;
+using FastEndpoints;
+using FastEndPointsDemo.Data.Entities;
 using FastEndPointsDemo.Endpoints.RequestModels;
 using FastEndPointsDemo.Endpoints.ResponseModels;
+using FastEndPointsDemo.Interfaces;
 using FastEndPointsDemo.Models;
 using FluentValidation;
 
 namespace FastEndPointsDemo.Endpoints;
 
-public class Login : Endpoint<LoginRequest, LoginResponse, UserToLoginResponseMapper>
+public class Login : Endpoint<LoginRequest, ApiResponse<LoginResponse>>
 {
     private readonly IAuthService _authService;
 
-    // inject any dependencies.
     public Login(IAuthService authService)
     {
         _authService = authService;
@@ -24,30 +26,19 @@ public class Login : Endpoint<LoginRequest, LoginResponse, UserToLoginResponseMa
 
     public override async Task HandleAsync(LoginRequest req, CancellationToken ct)
     {
-        var result = await _authService.Login();
-        await SendAsync(Map.FromEntity(result), cancellation: ct);
+        var result = await _authService.Login(req);
+        if (result.IsSuccess)
+        {
+            await SendAsync(new ApiResponse<LoginResponse>(result.Data),
+                cancellation: ct);
+        }
+
+        // we can create our own version of the send method if needed
+        // await SendAsync(new ApiResponse<LoginResponse>(Map.FromEntity(result.Data)),
+        //     (int)HttpStatusCode.BadRequest,
+        //     ct);
+        ThrowError(result.Error?.Message!);
     }
-}
-
-public class UserToLoginResponseMapper : Mapper<LoginRequest, LoginResponse, User>
-{
-    // optional mapping setup.
-    // we can also map the request to a domain model if we need to.
-    // or use autoMapper, or whatever we decide.
-    // public override User ToEntity(LoginRequest r)
-    // {
-    //     return base.ToEntity(r);
-    // }
-
-    public override LoginResponse FromEntity(User e) => new()
-    {
-        Id = e.Id,
-        FirstName = e.FirstName,
-        LastName = e.LastName,
-        UserName = e.UserName,
-        PhoneNumber = e.PhoneNumber,
-        Status = e.Status
-    };
 }
 
 // validators dont need to be registered, FastEndpoint auto searches the assembly
